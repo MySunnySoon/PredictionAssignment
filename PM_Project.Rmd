@@ -1,0 +1,109 @@
+---
+title: 'Prediction Assignment Writeup'
+output:
+  pdf_document: default
+  html_document: default
+---
+
+# Instructions
+In this project, we use data from accelerometers on the belt, forearm, arm, and dumbell of 6 participants that were asked to perform barbell lifts correctly and incorrectly in 5 different ways. More information is available from the website here: http://web.archive.org/web/20161224072740/http:/groupware.les.inf.puc-rio.br/har (see the section on the Weight Lifting Exercise Dataset).
+
+The goal is to predict the manner in which they did the exercise. This is the "classe" variable in the training set. You may use any of the other variables to predict with. You should create a report describing how you built your model, how you used cross validation, what you think the expected out of sample error is, and why you made the choices you did. You will also use your prediction model to predict 20 different test cases.
+
+
+# Summary of Data
+
+```{r loaddata}
+rm(list = ls())
+library(lattice); 
+library(ggplot2); 
+library(caret); 
+library(randomForest); 
+library(rpart); 
+library(rpart.plot);
+library(rattle)
+
+```
+
+# Exploratory data analysis
+
+```{r exploratory}
+set.seed(4321)
+
+# data load and clean up
+trainfileUrl <- "http://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv"
+testfileUrl <- "http://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv"
+
+trainfilename<-"./pml-training.csv"
+if(!file.exists(trainfilename)) {
+  download.file(trainfileURL, trainfilename, method = "curl")
+}
+testfilename<-"./pml-testing.csv"
+if(!file.exists(testfilename)) {
+  download.file(testfileURL, testfilename, method = "curl")
+}
+
+training <- read.csv(trainfilename, na.strings=c("NA","#DIV/0!", ""))
+testing <- read.csv(testfilename, na.strings=c("NA","#DIV/0!", ""))
+
+# Perform exploratory analysis - 
+dim(training); 
+# str(training); 
+# head(training);
+
+# Remove variables with near zero variance
+training <- training[,colSums(is.na(training)) == 0]
+testing <- testing[,colSums(is.na(testing)) == 0]
+
+# Remove columns that are not predictors. 
+training <- training[,-c(1:7)]
+testing <- testing[,-c(1:7)]
+
+#str(training)
+dim(training)
+training$classe = factor(training$classe)
+#testing$classe = factor(testing$classe)
+
+# Create a training set and validation data set
+inTrain <- createDataPartition(y=training$classe, p=0.7, list=FALSE)
+trainSet <- training[inTrain, ] 
+validSet <- training[-inTrain, ]
+```
+
+# Prediction 1: Recursive Partitioning and Regression Trees
+
+```{r decision_tree}
+modDT <- rpart(classe ~ ., data=trainSet, method="class")
+
+# Plot the Decision Tree
+fancyRpartPlot(modDT)
+
+predDT <- predict(modDT, validSet, type = "class")
+
+confusionMatrix(predDT, validSet$classe)
+```
+
+# Prediction 2: Random Forest
+
+```{r random_forest}
+modRF <- randomForest(classe ~. , data=trainSet, method="class")
+
+predRF <- predict(modRF, validSet, type = "class")
+
+confusionMatrix(predRF, validSet$classe)
+
+```
+
+*From the confusion matrix, the Random Forest (99%) perform better than Decision Tree (75%) in accuarcy using the validation set. Hence, we will use the Random Forest on the testing set* 
+
+# Submission
+
+```{r}
+predTest <- predict(modRF, testing, type="class")
+predTest
+
+```
+
+
+## Conclusion  
+
