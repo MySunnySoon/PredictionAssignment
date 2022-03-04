@@ -1,6 +1,7 @@
 ---
-title: 'Prediction Assignment Writeup'
+title: "Prediction Assignment Writeup"
 output:
+  word_document: default
   pdf_document: default
   html_document: default
 ---
@@ -25,7 +26,7 @@ library(rattle)
 
 ```
 
-# Exploratory data analysis
+# Load and partition data
 
 ```{r exploratory}
 set.seed(4321)
@@ -96,7 +97,7 @@ confusionMatrix(predRF, validSet$classe)
 
 *From the confusion matrix, the Random Forest (99%) perform better than Decision Tree (75%) in accuarcy using the validation set. Hence, we will use the Random Forest on the testing set* 
 
-# Submission
+# Perform prediction on testing set
 
 ```{r}
 predTest <- predict(modRF, testing, type="class")
@@ -104,6 +105,4 @@ predTest
 
 ```
 
-
-## Conclusion  
 
